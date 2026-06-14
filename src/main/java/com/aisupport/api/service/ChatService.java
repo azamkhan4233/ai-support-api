@@ -1,6 +1,7 @@
 package com.aisupport.api.service;
 
 import com.aisupport.api.dto.*;
+import com.aisupport.api.exception.ForbiddenException;
 import com.aisupport.api.exception.ResourceNotFoundException;
 import com.aisupport.api.model.*;
 import com.aisupport.api.repository.*;
@@ -38,7 +39,6 @@ public class ChatService {
         Business business = businessRepository.findById(request.getBusinessId())
                 .orElseThrow(() -> new ResourceNotFoundException("Business not found"));
 
-        // Find or create customer
         Customer customer;
         if (request.getCustomerSessionId() != null) {
             customer = customerRepository.findBySessionId(request.getCustomerSessionId())
@@ -47,7 +47,6 @@ public class ChatService {
             customer = createNewCustomer(business, request.getIpAddress());
         }
 
-        // Create new chat session
         ChatSession session = ChatSession.builder()
                 .business(business)
                 .customer(customer)
@@ -66,12 +65,9 @@ public class ChatService {
         return customerRepository.save(customer);
     }
 
-    public ChatResponseDTO sendMessage(Long sessionId, ChatRequestDTO request) {
-        // Get session
-        ChatSession session = chatSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
+    public ChatResponseDTO sendMessage(Long sessionId, String customerSessionId, ChatRequestDTO request) {
+        ChatSession session = getValidatedSession(sessionId, customerSessionId);
 
-        // Update customer info if provided
         if (request.getCustomerName() != null || request.getCustomerEmail() != null) {
             Customer customer = session.getCustomer();
             if (request.getCustomerName() != null) {
@@ -83,7 +79,6 @@ public class ChatService {
             customerRepository.save(customer);
         }
 
-        // Save user message
         Message userMessage = Message.builder()
                 .chatSession(session)
                 .sender("user")
@@ -92,14 +87,11 @@ public class ChatService {
                 .build();
         messageRepository.save(userMessage);
 
-        // Get conversation history
         List<Message> history = messageRepository.findByChatSessionIdOrderByTimestampAsc(sessionId);
 
-        // Generate AI response
         String systemPrompt = session.getBusiness().getAgentSystemPrompt();
         String aiResponseContent = aiService.generateResponse(systemPrompt, history, null);
 
-        // Save AI response
         Message aiMessage = Message.builder()
                 .chatSession(session)
                 .sender("assistant")
@@ -107,9 +99,6 @@ public class ChatService {
                 .timestamp(LocalDateTime.now())
                 .build();
         messageRepository.save(aiMessage);
-
-        // Try to extract lead information
-        leadService.tryExtractLead(session, history);
 
         return ChatResponseDTO.builder()
                 .sessionId(sessionId)
@@ -119,22 +108,19 @@ public class ChatService {
                 .build();
     }
 
-    public void endSession(Long sessionId) {
-        ChatSession session = chatSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
-        
+    public void endSession(Long sessionId, String customerSessionId) {
+        ChatSession session = getValidatedSession(sessionId, customerSessionId);
+
+        List<Message> history = messageRepository.findByChatSessionIdOrderByTimestampAsc(sessionId);
+        leadService.tryExtractLead(session, history);
+
         session.setStatus("ENDED");
         session.setEndedAt(LocalDateTime.now());
         chatSessionRepository.save(session);
     }
 
-
-
-    public List<MessageDTO> getSessionHistory(Long sessionId) {
-
-        if (!chatSessionRepository.existsById(sessionId)) {
-            throw new ResourceNotFoundException("Chat session not found");
-        }
+    public List<MessageDTO> getSessionHistory(Long sessionId, String customerSessionId) {
+        getValidatedSession(sessionId, customerSessionId);
 
         return messageRepository
                 .findByChatSessionIdOrderByTimestampAsc(sessionId)
@@ -149,19 +135,32 @@ public class ChatService {
     }
 
     public List<ChatSessionDTO> getBusinessSessions(Long businessId) {
-
         return chatSessionRepository
                 .findByBusinessIdOrderByStartedAtDesc(businessId)
                 .stream()
                 .map(session -> ChatSessionDTO.builder()
                         .sessionId(session.getId())
                         .customerId(session.getCustomer().getId())
-                        .customerSessionId(
-                                session.getCustomer().getSessionId())
+                        .customerSessionId(session.getCustomer().getSessionId())
                         .status(session.getStatus())
                         .startedAt(session.getStartedAt())
                         .endedAt(session.getEndedAt())
                         .build())
                 .toList();
+    }
+
+    private ChatSession getValidatedSession(Long sessionId, String customerSessionId) {
+        if (customerSessionId == null || customerSessionId.isBlank()) {
+            throw new ForbiddenException("Customer session ID is required");
+        }
+
+        ChatSession session = chatSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
+
+        if (!session.getCustomer().getSessionId().equals(customerSessionId)) {
+            throw new ResourceNotFoundException("Chat session not found");
+        }
+
+        return session;
     }
 }

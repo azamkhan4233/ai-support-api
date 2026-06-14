@@ -44,4 +44,8 @@ public class User {
     private LocalDateTime createdAt;
 
     private boolean active = true;
+
+    private String resetToken;
+
+    private LocalDateTime resetTokenExpiry;
 }

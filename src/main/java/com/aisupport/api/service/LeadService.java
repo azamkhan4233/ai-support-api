@@ -4,7 +4,10 @@ import com.aisupport.api.model.ChatSession;
 import com.aisupport.api.model.Lead;
 import com.aisupport.api.model.Message;
 import com.aisupport.api.dto.LeadDTO;
+import com.aisupport.api.exception.ResourceNotFoundException;
 import com.aisupport.api.repository.LeadRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,8 @@ import java.util.Map;
 @Transactional
 public class LeadService {
 
+    private static final Logger log = LoggerFactory.getLogger(LeadService.class);
+
     @Autowired
     private LeadRepository leadRepository;
 
@@ -24,30 +29,27 @@ public class LeadService {
 
     public void tryExtractLead(ChatSession session, List<Message> conversationHistory) {
         try {
-            // Only extract if conversation has at least 3 messages
             if (conversationHistory.size() < 3) {
                 return;
             }
 
             Map<String, String> leadInfo = aiService.extractLeadInfo(conversationHistory);
 
-            // Check if we have minimum required info (at least name or email)
             String name = leadInfo.get("name");
             String email = leadInfo.get("email");
             String phone = leadInfo.get("phone");
             String interest = leadInfo.get("interest");
 
             if ((name != null && !name.equals("null")) || (email != null && !email.equals("null"))) {
-                // Check if lead already exists for this business with this email
                 if (email != null && !email.equals("null")) {
                     List<Lead> existingLeads = leadRepository.findByBusinessIdOrderByCreatedAtDesc(
                             session.getBusiness().getId());
-                    
+
                     boolean exists = existingLeads.stream()
                             .anyMatch(lead -> email.equals(lead.getEmail()));
-                    
+
                     if (exists) {
-                        return; // Don't create duplicate
+                        return;
                     }
                 }
 
@@ -63,14 +65,11 @@ public class LeadService {
                 leadRepository.save(lead);
             }
         } catch (Exception e) {
-            // Log error but don't fail the main chat flow
-            e.printStackTrace();
+            log.error("Lead extraction failed for session {}", session.getId(), e);
         }
     }
 
-
     public List<LeadDTO> getBusinessLeads(Long businessId) {
-
         return leadRepository
                 .findByBusinessIdOrderByCreatedAtDesc(businessId)
                 .stream()
@@ -90,9 +89,14 @@ public class LeadService {
         return leadRepository.findByBusinessIdAndStatus(businessId, status);
     }
 
-    public Lead updateLeadStatus(Long leadId, String newStatus) {
+    public Lead updateLeadStatus(Long leadId, Long businessId, String newStatus) {
         Lead lead = leadRepository.findById(leadId)
-                .orElseThrow(() -> new RuntimeException("Lead not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Lead not found"));
+
+        if (!lead.getBusiness().getId().equals(businessId)) {
+            throw new ResourceNotFoundException("Lead not found");
+        }
+
         lead.setStatus(newStatus);
         return leadRepository.save(lead);
     }

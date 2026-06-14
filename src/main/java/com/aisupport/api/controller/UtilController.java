@@ -1,6 +1,7 @@
 package com.aisupport.api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -8,7 +9,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/util")
-@CrossOrigin(origins = "*")
+@Profile("dev")
 public class UtilController {
 
     @Autowired

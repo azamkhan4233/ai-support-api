@@ -4,7 +4,7 @@ A production-ready Spring Boot REST API for AI-powered customer support with aut
 
 ## Features
 
-- 🤖 **AI-Powered Chat**: Integrated with OpenAI GPT-4 for intelligent customer support
+- 🤖 **AI-Powered Chat**: OpenAI-compatible API (Groq by default) for intelligent customer support
 - 👤 **Customer Management**: Track and manage customer interactions
 - 📊 **Lead Extraction**: Automatic lead generation from conversations
 - 🔐 **JWT Authentication**: Secure API access with JWT tokens
@@ -16,10 +16,9 @@ A production-ready Spring Boot REST API for AI-powered customer support with aut
 
 - **Framework**: Spring Boot 3.2.1
 - **Language**: Java 17
-- **Database**: PostgreSQL 15
-- **Cache**: Redis 7
+- **Database**: PostgreSQL 15 (prod) / H2 (dev)
 - **Security**: Spring Security + JWT
-- **AI**: OpenAI GPT-4 API
+- **AI**: Groq or any OpenAI-compatible chat API
 - **Containerization**: Docker
 
 ## Quick Start
@@ -97,6 +96,7 @@ POST /api/chat/{sessionId}/message
 Content-Type: application/json
 
 {
+  "customerSessionId": "uuid-from-start-response",
   "content": "Hello, I need help with my order",
   "customerName": "John Doe",
   "customerEmail": "john@example.com"
@@ -127,9 +127,10 @@ The application uses the following main entities:
 
 Main configuration file with database, JWT, and OpenAI settings.
 
-### application-dev.yml
+### application-dev.yml / application-prod.yml
 
-Development profile using H2 in-memory database.
+- **dev**: H2 in-memory database (default profile)
+- **prod**: PostgreSQL for Docker/production
 
 ## Development
 
@@ -206,13 +207,6 @@ http://localhost:8080/actuator/health
 - ✅ SQL injection prevention
 - ✅ XSS protection
 
-## Performance
-
-- Redis caching for sessions
-- Connection pooling
-- Optimized database queries
-- Async processing ready
-
 ## Contributing
 
 1. Fork the repository
@@ -230,7 +224,6 @@ For issues and questions, please open a GitHub issue.
 
 ## Roadmap
 
-- [ ] WebSocket support for real-time chat
 - [ ] Email notifications
 - [ ] Analytics dashboard
 - [ ] Multi-language support

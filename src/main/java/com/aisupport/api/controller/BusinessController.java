@@ -15,7 +15,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/business")
-@CrossOrigin(origins = "*")
 public class BusinessController {
 
     @Autowired
@@ -29,16 +28,11 @@ public class BusinessController {
 
     @GetMapping("/profile")
     public ResponseEntity<BusinessDTO> getProfile() {
-
-        Long businessId =
-                authService.getCurrentUser()
-                        .getBusiness()
-                        .getId();
+        Long businessId = authService.getCurrentUser().getBusiness().getId();
 
         Business business = businessRepository
                 .findById(businessId)
-                .orElseThrow(() ->
-                        new RuntimeException("Business not found"));
+                .orElseThrow(() -> new RuntimeException("Business not found"));
 
         BusinessDTO dto = BusinessDTO.builder()
                 .id(business.getId())

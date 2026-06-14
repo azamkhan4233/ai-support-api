@@ -90,7 +90,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"Hello, I'm interested in your products\",\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"john@example.com\"\n}"
+              "raw": "{\n  \"customerSessionId\": \"{{customer_session_id}}\",\n  \"content\": \"Hello, I'm interested in your products\",\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"john@example.com\"\n}"
             },
             "url": {
               "raw": "http://localhost:8080/api/chat/{{session_id}}/message",
@@ -107,11 +107,17 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/chat/{{session_id}}/history",
+              "raw": "http://localhost:8080/api/chat/{{session_id}}/history?customerSessionId={{customer_session_id}}",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
-              "path": ["api", "chat", "{{session_id}}", "history"]
+              "path": ["api", "chat", "{{session_id}}", "history"],
+              "query": [
+                {
+                  "key": "customerSessionId",
+                  "value": "{{customer_session_id}}"
+                }
+              ]
             }
           }
         },
@@ -121,11 +127,17 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/chat/{{session_id}}/end",
+              "raw": "http://localhost:8080/api/chat/{{session_id}}/end?customerSessionId={{customer_session_id}}",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8080",
-              "path": ["api", "chat", "{{session_id}}", "end"]
+              "path": ["api", "chat", "{{session_id}}", "end"],
+              "query": [
+                {
+                  "key": "customerSessionId",
+                  "value": "{{customer_session_id}}"
+                }
+              ]
             }
           }
         }
@@ -280,6 +292,10 @@
     {
       "key": "session_id",
       "value": "1"
+    },
+    {
+      "key": "customer_session_id",
+      "value": "your-customer-session-id"
     },
     {
       "key": "lead_id",

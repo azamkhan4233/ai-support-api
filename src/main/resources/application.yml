@@ -1,7 +1,24 @@
-# application.yml
 spring:
   profiles:
-    active: dev  # Change to 'prod' when deploying
-
+    active: dev
   application:
     name: ai-support-api
+
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+    url: ${OPENAI_API_URL:https://api.groq.com/openai/v1/chat/completions}
+  model: ${OPENAI_MODEL:llama-3.3-70b-versatile}
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-key-change-in-production-min-32-chars}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized

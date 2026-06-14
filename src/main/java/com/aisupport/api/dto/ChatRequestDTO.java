@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatRequestDTO {
     
+    @NotBlank(message = "Customer session ID is required")
+    private String customerSessionId;
+
     @NotBlank(message = "Content is required")
     private String content;
     

@@ -9,9 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
@@ -25,18 +26,16 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileDTO> getCurrentUser() {
-
         User user = authService.getCurrentUser();
 
-        UserProfileDTO response =
-                UserProfileDTO.builder()
-                        .id(user.getId())
-                        .email(user.getEmail())
-                        .name(user.getName())
-                        .role(user.getRole())
-                        .businessId(user.getBusiness().getId())
-                        .businessName(user.getBusiness().getName())
-                        .build();
+        UserProfileDTO response = UserProfileDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .role(user.getRole())
+                .businessId(user.getBusiness().getId())
+                .businessName(user.getBusiness().getName())
+                .build();
 
         return ResponseEntity.ok(response);
     }
@@ -48,7 +47,27 @@ public class AuthController {
         authService.register(request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new RegisterResponseDTO(
-                        "Business registered successfully"));
+                .body(new RegisterResponseDTO("Business registered successfully"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequestDTO request) {
+
+        String token = authService.forgotPassword(request.getEmail());
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Password reset token generated",
+                "resetToken", token   // REMOVE this line in production
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequestDTO request) {
+
+        authService.resetPassword(request.getToken(), request.getNewPassword());
+
+        return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
     }
 }
