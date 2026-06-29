@@ -11,4 +11,7 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
     List<ChatSession> findByBusinessIdOrderByStartedAtDesc(Long businessId);
     List<ChatSession> findByCustomerIdOrderByStartedAtDesc(Long customerId);
     List<ChatSession> findByStatus(String status);
+    long countByBusinessId(Long businessId);
+
+    long countByBusinessIdAndStatus(Long businessId, String status);
 }

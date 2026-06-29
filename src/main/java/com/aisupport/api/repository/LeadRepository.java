@@ -11,4 +11,7 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
     List<Lead> findByBusinessIdOrderByCreatedAtDesc(Long businessId);
     List<Lead> findByStatus(String status);
     List<Lead> findByBusinessIdAndStatus(Long businessId, String status);
+    long countByBusinessId(Long businessId);
+
+    long countByBusinessIdAndStatus(Long businessId, String status);
 }

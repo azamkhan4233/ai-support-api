@@ -59,4 +59,7 @@ public class Business {
 
     @Column(name = "public_api_key")
     private String publicApiKey;
+
+    @OneToMany(mappedBy = "business", cascade = CascadeType.ALL)
+    private List<Document> documents = new ArrayList<>();
 }

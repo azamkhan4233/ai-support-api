@@ -48,4 +48,6 @@ public class ChatSession {
         messages.add(message);
         message.setChatSession(this);
     }
+
+    private LocalDateTime lastActivityAt;
 }

@@ -51,4 +51,26 @@ public class AuthController {
                 .body(new RegisterResponseDTO(
                         "Business registered successfully"));
     }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @RequestBody ForgotPasswordRequestDTO request) {
+
+        String token =
+                authService.forgotPassword(request.getEmail());
+
+        return ResponseEntity.ok(
+                "Reset Token: " + token);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @RequestBody ResetPasswordRequestDTO request) {
+
+        authService.resetPassword(
+                request.getToken(),
+                request.getNewPassword());
+
+        return ResponseEntity.ok(
+                "Password reset successful");
+    }
 }

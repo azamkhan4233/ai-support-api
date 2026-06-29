@@ -20,4 +20,6 @@ public class ChatSessionDTO {
     private LocalDateTime endedAt;
 
     private Long customerId;
+    private Integer messageCount;
+
 }

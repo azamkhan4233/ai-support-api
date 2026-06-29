@@ -57,26 +57,55 @@ public class BusinessController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<Business> updateProfile(@RequestBody Map<String, String> updates) {
-        Long businessId = authService.getCurrentUser().getBusiness().getId();
+    public ResponseEntity<BusinessDTO> updateProfile(
+            @RequestBody Map<String, String> updates) {
+
+        Long businessId = authService.getCurrentUser()
+                .getBusiness()
+                .getId();
+
         Business business = businessRepository.findById(businessId)
-                .orElseThrow(() -> new RuntimeException("Business not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("Business not found"));
 
         if (updates.containsKey("name")) {
             business.setName(updates.get("name"));
         }
+
         if (updates.containsKey("description")) {
             business.setDescription(updates.get("description"));
         }
+
         if (updates.containsKey("industry")) {
             business.setIndustry(updates.get("industry"));
         }
+
         if (updates.containsKey("agentSystemPrompt")) {
-            business.setAgentSystemPrompt(updates.get("agentSystemPrompt"));
+            business.setAgentSystemPrompt(
+                    updates.get("agentSystemPrompt"));
+        }
+
+        if (updates.containsKey("agentPersonality")) {
+            business.setAgentPersonality(
+                    updates.get("agentPersonality"));
         }
 
         Business updated = businessRepository.save(business);
-        return ResponseEntity.ok(updated);
+
+        BusinessDTO dto = BusinessDTO.builder()
+                .id(updated.getId())
+                .name(updated.getName())
+                .description(updated.getDescription())
+                .industry(updated.getIndustry())
+                .contactEmail(updated.getContactEmail())
+                .agentSystemPrompt(updated.getAgentSystemPrompt())
+                .agentPersonality(updated.getAgentPersonality())
+                .active(updated.isActive())
+                .publicApiKey(updated.getPublicApiKey())
+                .createdAt(updated.getCreatedAt())
+                .build();
+
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/sessions")
