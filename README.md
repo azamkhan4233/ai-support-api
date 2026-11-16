@@ -1,242 +1,119 @@
-# AI Customer Support API
+# AI Support SaaS — Backend API
 
-A production-ready Spring Boot REST API for AI-powered customer support with automatic lead extraction and management.
+A Spring Boot backend for a multi-tenant AI customer-support platform. The codebase separates HTTP controllers, services, persistence, security, and domain models.
 
-## Features
+## What the backend contains
 
-- 🤖 **AI-Powered Chat**: Integrated with OpenAI GPT-4 for intelligent customer support
-- 👤 **Customer Management**: Track and manage customer interactions
-- 📊 **Lead Extraction**: Automatic lead generation from conversations
-- 🔐 **JWT Authentication**: Secure API access with JWT tokens
-- 💬 **Multi-tenant**: Support multiple businesses on a single platform
-- 📈 **Analytics Ready**: Session tracking and conversation history
-- 🐳 **Docker Support**: Easy deployment with Docker and Docker Compose
+- **Authentication:** registration/login flows and JWT-based request authentication.
+- **Multi-tenant domain:** business, user, customer, chat-session, message, and lead models.
+- **AI-assisted support:** chat response generation and lead-information extraction through an OpenAI-compatible Chat Completions API.
+- **Conversation management:** controllers and services for chat sessions and messages.
+- **Knowledge documents:** document and document-chunk models, repositories, and document endpoints.
+- **Business insights:** analytics endpoints and service layer.
+- **API tooling:** Springdoc OpenAPI dependency and a Postman collection in the repository.
 
-## Tech Stack
+> The default AI endpoint in `OpenAIConfig` is the Groq OpenAI-compatible endpoint, and `AIService` defaults to the `llama-3.3-70b-versatile` model. Configure the API URL, model, and API key for your own environment.
 
-- **Framework**: Spring Boot 3.2.1
-- **Language**: Java 17
-- **Database**: PostgreSQL 15
-- **Cache**: Redis 7
-- **Security**: Spring Security + JWT
-- **AI**: OpenAI GPT-4 API
-- **Containerization**: Docker
+## Technology
 
-## Quick Start
+| Area | Technologies |
+|---|---|
+| Language / framework | Java 17, Spring Boot 3.2.1 |
+| Backend | Spring MVC, Spring Security, Spring Data JPA, Hibernate |
+| Authentication | JWT (JJWT) |
+| Persistence | MySQL JDBC driver; H2 is referenced in project documentation |
+| Supporting services | Redis client, WebSocket |
+| AI / HTTP | OpenAI-compatible chat completions API, OkHttp, Jackson |
+| Documents | Apache PDFBox |
+| API documentation | Springdoc OpenAPI |
+| Build | Maven |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Client[Web client] --> Controllers[REST controllers]
+    Controllers --> Services[Service layer]
+    Services --> Repositories[Spring Data repositories]
+    Repositories --> DB[(Relational database)]
+    Services --> AI[AI chat completions API]
+    Services --> Docs[Document processing]
+    Services --> Analytics[Analytics]
+```
+
+The source tree is organized into `controller`, `service`, `repository`, `model`, `dto`, `security`, `config`, and `exception` packages.
+
+## Main API areas
+
+The controller package currently includes:
+
+- Authentication
+- Business management
+- Chat and conversation sessions
+- Document operations
+- Lead management
+- Analytics
+
+For request examples, import `postman_collection.json` into Postman and review the controller classes for the current route definitions.
+
+## Run locally
 
 ### Prerequisites
 
-- Java 17+
-- Maven 3.6+
-- PostgreSQL 15+ (or use Docker)
-- OpenAI API Key
+- JDK 17
+- Maven
+- A configured relational database
+- Redis if the enabled application configuration requires it
+- An API key for the configured AI endpoint
 
-### 1. Clone and Setup
+### Configure
 
-```bash
-git clone <your-repo-url>
-cd ai-support-api
-```
+Review the configuration under `src/main/resources` and the sample `.env.example`. Supply environment-specific values for database connectivity, JWT signing, and the AI provider. Do not commit real API keys, passwords, or signing secrets.
 
-### 2. Configure Environment
+**Configuration check:** the current Maven build declares the MySQL JDBC driver, while the sample `.env.example` contains a PostgreSQL JDBC URL. Align the driver and datasource URL with the database you actually run before starting the service.
 
-Create a `.env` file in the project root:
+### Build and test
 
 ```bash
-OPENAI_API_KEY=your-openai-api-key
-JWT_SECRET=your-secure-jwt-secret-at-least-32-characters
+mvn clean package
+mvn test
 ```
 
-### 3. Run with Docker (Recommended)
+### Start
 
 ```bash
-cd docker
-docker-compose up -d
+mvn spring-boot:run
 ```
 
-The API will be available at `http://localhost:8080`
+Startup depends on valid database, JWT, and AI-provider configuration in your environment.
 
-### 4. Run Locally (Without Docker)
+## Repository map
 
-```bash
-# Start PostgreSQL and Redis locally first
-# Then run:
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```text
+src/main/java/com/aisupport/api/
+├── config/
+├── controller/
+├── dto/
+├── exception/
+├── model/
+├── repository/
+├── security/
+└── service/
 ```
 
-## API Endpoints
+Other useful files:
 
-### Authentication
+- `pom.xml` — dependencies and Java/Spring Boot versions
+- `postman_collection.json` — API request collection
+- `docker/` — Docker-related files
+- `QUICKSTART.md`, `SETUP_GUIDE.md`, `PROJECT_STRUCTURE.md` — supporting project documentation
 
-```http
-POST /api/auth/login
-Content-Type: application/json
+## Security notes
 
-{
-  "email": "user@example.com",
-  "password": "password"
-}
-```
+- Keep secrets outside source control.
+- Replace sample credentials and development secrets before deployment.
+- Review authorization rules and tenant-scoped data access before exposing the API publicly.
 
-### Start Chat Session
+## Current scope
 
-```http
-POST /api/chat/start
-Content-Type: application/json
-
-{
-  "businessId": 1,
-  "ipAddress": "192.168.1.1"
-}
-```
-
-### Send Message
-
-```http
-POST /api/chat/{sessionId}/message
-Content-Type: application/json
-
-{
-  "content": "Hello, I need help with my order",
-  "customerName": "John Doe",
-  "customerEmail": "john@example.com"
-}
-```
-
-### Get Leads
-
-```http
-GET /api/leads
-Authorization: Bearer {your-jwt-token}
-```
-
-## Database Schema
-
-The application uses the following main entities:
-
-- **User**: System users (business employees)
-- **Business**: Companies using the platform
-- **Customer**: End customers chatting with AI
-- **ChatSession**: Individual chat conversations
-- **Message**: Chat messages
-- **Lead**: Extracted leads from conversations
-
-## Configuration
-
-### application.yml
-
-Main configuration file with database, JWT, and OpenAI settings.
-
-### application-dev.yml
-
-Development profile using H2 in-memory database.
-
-## Development
-
-### Build the Project
-
-```bash
-./mvnw clean install
-```
-
-### Run Tests
-
-```bash
-./mvnw test
-```
-
-### Package
-
-```bash
-./mvnw package
-```
-
-## Deployment
-
-### Docker Deployment
-
-```bash
-cd docker
-docker-compose up -d
-```
-
-### AWS/Cloud Deployment
-
-1. Build the JAR:
-```bash
-./mvnw clean package
-```
-
-2. Deploy the JAR file to your cloud provider
-
-3. Set environment variables:
-- `OPENAI_API_KEY`
-- `JWT_SECRET`
-- Database connection strings
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `OPENAI_API_KEY` | Your OpenAI API key | Yes |
-| `JWT_SECRET` | Secret key for JWT tokens (32+ chars) | Yes |
-| `SPRING_DATASOURCE_URL` | PostgreSQL connection URL | Yes |
-| `SPRING_DATASOURCE_USERNAME` | Database username | Yes |
-| `SPRING_DATASOURCE_PASSWORD` | Database password | Yes |
-
-## API Documentation
-
-Once running, access Swagger UI at:
-```
-http://localhost:8080/swagger-ui.html
-```
-
-## Monitoring
-
-Health check endpoint:
-```
-http://localhost:8080/actuator/health
-```
-
-## Security Features
-
-- ✅ JWT-based authentication
-- ✅ Password encryption with BCrypt
-- ✅ CORS configuration
-- ✅ SQL injection prevention
-- ✅ XSS protection
-
-## Performance
-
-- Redis caching for sessions
-- Connection pooling
-- Optimized database queries
-- Async processing ready
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions, please open a GitHub issue.
-
-## Roadmap
-
-- [ ] WebSocket support for real-time chat
-- [ ] Email notifications
-- [ ] Analytics dashboard
-- [ ] Multi-language support
-- [ ] Sentiment analysis
-- [ ] Custom AI model training
-
----
-
-Built with ❤️ using Spring Boot and OpenAI
+This README describes the repository structure and dependencies visible in the code. It does not claim production readiness, deployment status, automated test coverage, or a completed retrieval-augmented-generation workflow.
